@@ -69,3 +69,10 @@ Route::get('/logout-for-reset', function (\Illuminate\Http\Request $request) {
 Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
 Route::get('/newsletter/confirm/{token}', [NewsletterController::class, 'confirm'])->name('newsletter.confirm');
 Route::get('/newsletter/unsubscribe/{token}', [NewsletterController::class, 'unsubscribe'])->name('newsletter.unsubscribe');
+
+// ─── SEO ───
+Route::get('/robots.txt', fn () => response(
+    "User-agent: *\nDisallow: /\n\nSitemap: https://main.sharzhukov.com/sitemap.xml\n",
+    200,
+    ['Content-Type' => 'text/plain']
+))->name('robots');
