@@ -67,10 +67,6 @@
         <a href="{{ url('/projects') }}" class="brutal-nav-drawer-link">My projects</a>
         <a href="{{ url('/statistics') }}" class="brutal-nav-drawer-link">Statistics</a>
 
-        @if($me?->isModerator())
-            <a href="https://sharzhukov.com/admin" target="_blank" rel="noopener" class="brutal-nav-drawer-link">Admin panel ↗</a>
-        @endif
-
         <a href="{{ route('account.export') }}" class="brutal-nav-drawer-link">Export data</a>
 
         <form method="POST" action="{{ route('logout') }}" style="margin:8px 0 0;">
