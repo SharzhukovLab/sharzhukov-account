@@ -15,9 +15,14 @@
     <link rel="manifest" href="/site.webmanifest">
     <script>
         (function () {
-            var t = localStorage.getItem('theme');
-            if (t === 'dark') document.documentElement.classList.add('dark');
-        })();
+    var V = 'v2-2026-10-11';
+    if (localStorage.getItem('theme_version') !== V) {
+        localStorage.removeItem('theme');
+        localStorage.setItem('theme_version', V);
+    }
+    var t = localStorage.getItem('theme');
+    if (t === 'dark') document.documentElement.classList.add('dark');
+})();
     </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -27,7 +32,8 @@
     brand-title="SHARZHUKOV ACCOUNT"
     brand-sub="// USER CENTER"
     brand-url="/dashboard"
-    :show-auth="false"
+    :show-auth="true"
+    :dashboard-url="url('/profile')"
     :items="[
         ['label' => 'Overview', 'url' => '/dashboard'],
         ['label' => 'Security', 'url' => '/security'],
@@ -36,15 +42,7 @@
         ['label' => 'Main ↗',   'url' => 'https://sharzhukov.com', 'external' => true],
     ]"
 >
-    @if($me)
-        <a href="{{ url('/profile') }}" class="brutal-nav-avatar" title="My account">
-            @if($me->avatar_path)
-                <img src="{{ $me->avatar_url }}" alt="{{ $me->name }}">
-            @else
-                <span class="brutal-nav-avatar-fallback">{{ strtoupper(mb_substr($me->name ?? 'U', 0, 1)) }}</span>
-            @endif
-        </a>
-    @endif
+
 
     <x-slot:drawer>
         @if($me)
