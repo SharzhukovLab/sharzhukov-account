@@ -30,9 +30,11 @@ class ProfileController extends Controller
             'social_links' => ['nullable', 'array', 'max:10'],
             'social_links.*.platform' => ['required_with:social_links.*.url', 'string', 'in:' . implode(',', array_keys(User::allowedSocialPlatforms()))],
             'social_links.*.url'      => ['required_with:social_links.*.platform', 'url', 'max:500'],
-            'team_specs_data'              => ['nullable', 'array', 'max:15'],
-            'team_specs_data.*.type'       => ['required_with:team_specs_data.*.value', 'string', 'in:' . implode(',', $specTypes)],
-            'team_specs_data.*.value'      => ['required_with:team_specs_data.*.type', 'string', 'max:120'],
+            'team_specs_data'                              => ['nullable', 'array', 'max:10'],
+            'team_specs_data.*.name'                       => ['nullable', 'string', 'max:60'],
+            'team_specs_data.*.components'                 => ['nullable', 'array', 'max:20'],
+            'team_specs_data.*.components.*.type'          => ['nullable', 'string', 'in:' . implode(',', $specTypes)],
+            'team_specs_data.*.components.*.value'         => ['nullable', 'string', 'max:120'],
         ], [
             'username.regex' => 'Username may only contain lowercase letters, numbers, and dashes.',
         ]);
@@ -52,14 +54,28 @@ class ProfileController extends Controller
         }
         $data['social_links'] = $links;
 
-        $specs = [];
-        foreach (($data['team_specs_data'] ?? []) as $spec) {
-            if (!empty($spec['type']) && !empty($spec['value'])) {
-                $specs[] = ['type' => $spec['type'], 'value' => trim($spec['value'])];
+        // ── Nested specs: [{name, components:[{type,value}]}] ──
+        $blocks = [];
+        foreach (($data['team_specs_data'] ?? []) as $block) {
+            if (!is_array($block)) continue;
+            $name = trim((string) ($block['name'] ?? ''));
+            $comps = is_array($block['components'] ?? null) ? $block['components'] : [];
+            $items = [];
+            foreach ($comps as $c) {
+                if (!is_array($c)) continue;
+                $type = (string) ($c['type'] ?? '');
+                $val  = trim((string) ($c['value'] ?? ''));
+                if ($type === '' || $val === '') continue;
+                $items[] = ['type' => $type, 'value' => $val];
             }
+            if ($name === '' && empty($items)) continue;
+            $blocks[] = [
+                'name'       => $name !== '' ? $name : 'Device',
+                'components' => $items,
+            ];
         }
-        $data['team_specs_data'] = $specs;
-        if (!empty($specs)) {
+        $data['team_specs_data'] = $blocks;
+        if (!empty($blocks)) {
             $data['team_specs'] = null;
         }
 
