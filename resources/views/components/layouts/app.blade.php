@@ -25,6 +25,30 @@
 })();
     </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+<script>
+(function () {
+    if (!('serviceWorker' in navigator)) return;
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost') return;
+
+    window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' })
+            .then(function (reg) {
+                // Проверка обновлений
+                reg.addEventListener('updatefound', function () {
+                    var nw = reg.installing;
+                    if (!nw) return;
+                    nw.addEventListener('statechange', function () {
+                        if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+                            console.log('[PWA] New version ready — refresh to apply');
+                        }
+                    });
+                });
+            })
+            .catch(function (err) { console.warn('[PWA] SW register failed', err); });
+    });
+})();
+</script>
+
 </head>
 <body>
 
