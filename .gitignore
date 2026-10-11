@@ -24,3 +24,4 @@ Thumbs.db/.env.local
 # local backups
 *.bak
 *.pre-*.bak
+config/passkeys.php.bak-*
