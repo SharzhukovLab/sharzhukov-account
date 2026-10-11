@@ -119,6 +119,181 @@
         @endif
     </x-lab::card>
 
+        {{-- PASSKEYS --}}
+    <x-lab::card style="margin-bottom: 16px;">
+        <h2 style="margin-top: 0;">Passkeys</h2>
+        <p class="field-hint" style="margin-bottom: 20px;">
+            Sign in without a password using Face ID, Touch ID, Windows Hello, or a hardware security key.
+        </p>
+
+        @if (session('status') === 'passkey-registered')
+            <x-lab::alert variant="success" style="margin-bottom: 16px;">Passkey added.</x-lab::alert>
+        @endif
+        @if (session('status') === 'passkey-deleted')
+            <x-lab::alert variant="success" style="margin-bottom: 16px;">Passkey removed.</x-lab::alert>
+        @endif
+
+        @php $myPasskeys = $user->passkeys()->orderByDesc('created_at')->get(); @endphp
+
+        @if ($myPasskeys->isEmpty())
+            <p style="color: var(--lab-fg-muted); font-size: 14px; margin-bottom: 20px;">No passkeys yet.</p>
+        @else
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                @foreach ($myPasskeys as $pk)
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px; border: 2px solid var(--brutal-border); background: var(--lab-bg-elevated);">
+                        <div style="min-width: 0;">
+                            <div style="font-weight: 700; font-family: var(--font-mono); font-size: 14px;">{{ $pk->name }}</div>
+                            <div style="color: var(--lab-fg-muted); font-size: 12px; margin-top: 4px;">
+                                @if ($pk->authenticator) {{ $pk->authenticator }} · @endif
+                                Added {{ $pk->created_at?->format('M d, Y') }}
+                                @if ($pk->last_used_at) · Last used {{ $pk->last_used_at->diffForHumans() }} @endif
+                            </div>
+                        </div>
+                        <form method="POST" action="{{ url('/user/passkeys/'.$pk->id) }}" onsubmit="return confirm('Remove this passkey?');" style="flex-shrink:0;">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="lab-btn lab-btn--danger" style="font-size: 11px; padding: 8px 12px;">Remove</button>
+                        </form>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
+        <button type="button" class="lab-btn lab-btn--primary" id="passkey-add-btn">
+            Add passkey →
+        </button>
+
+        <p class="field-hint" style="margin-top: 16px;">
+            You may be asked to confirm your password first.
+        </p>
+
+        {{-- Register modal --}}
+        <div id="passkey-modal" style="display:none; position:fixed; inset:0; z-index:200; align-items:center; justify-content:center; background: rgba(0,0,0,.55); backdrop-filter: blur(3px); padding: 16px;">
+            <div class="brutal-card" style="max-width: 440px; width: 100%; padding: 28px; box-shadow: 8px 8px 0 var(--brutal-shadow);">
+                <h3 style="margin-top: 0; font-family: var(--font-sans); font-weight: 900; font-size: 22px;">Name your passkey</h3>
+                <p class="field-hint" style="margin-bottom: 16px;">Give it a name you'll recognize later — e.g. "MacBook Pro", "iPhone".</p>
+                <input type="text" id="passkey-name" class="lab-input" placeholder="MacBook Pro" maxlength="60" autocomplete="off">
+                <div id="passkey-error" style="display:none; color: #dc2626; font-size: 13px; margin-top: 10px;"></div>
+                <div style="display: flex; gap: 8px; margin-top: 20px; justify-content: flex-end;">
+                    <button type="button" class="lab-btn lab-btn--secondary" id="passkey-cancel">Cancel</button>
+                    <button type="button" class="lab-btn lab-btn--primary" id="passkey-confirm">Create →</button>
+                </div>
+            </div>
+        </div>
+    </x-lab::card>
+
+    <script>
+    (function () {
+        var addBtn   = document.getElementById('passkey-add-btn');
+        var modal    = document.getElementById('passkey-modal');
+        var nameInput= document.getElementById('passkey-name');
+        var confirmB = document.getElementById('passkey-confirm');
+        var cancelB  = document.getElementById('passkey-cancel');
+        var errBox   = document.getElementById('passkey-error');
+        var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+
+        if (!window.PublicKeyCredential) {
+            if (addBtn) { addBtn.disabled = true; addBtn.textContent = 'Passkeys not supported'; }
+            return;
+        }
+
+        function b64uToBuf(s) {
+            s = s.replace(/-/g, '+').replace(/_/g, '/');
+            while (s.length % 4) s += '=';
+            var bin = atob(s), len = bin.length, buf = new Uint8Array(len);
+            for (var i = 0; i < len; i++) buf[i] = bin.charCodeAt(i);
+            return buf.buffer;
+        }
+        function bufToB64u(buf) {
+            var bin = '', bytes = new Uint8Array(buf);
+            for (var i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i]);
+            return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+        function prepCreate(opts) {
+            opts.challenge = b64uToBuf(opts.challenge);
+            opts.user.id   = b64uToBuf(opts.user.id);
+            (opts.excludeCredentials || []).forEach(function (c) { c.id = b64uToBuf(c.id); });
+            return opts;
+        }
+        function serializeCred(cred) {
+            if (typeof cred.toJSON === 'function') return cred.toJSON();
+            var r = cred.response;
+            return {
+                id: cred.id,
+                rawId: bufToB64u(cred.rawId),
+                type: cred.type,
+                response: {
+                    clientDataJSON: bufToB64u(r.clientDataJSON),
+                    attestationObject: bufToB64u(r.attestationObject),
+                    transports: typeof r.getTransports === 'function' ? r.getTransports() : undefined,
+                },
+                clientExtensionResults: typeof cred.getClientExtensionResults === 'function' ? cred.getClientExtensionResults() : {},
+            };
+        }
+        function showErr(msg) {
+            if (!errBox) { alert(msg); return; }
+            errBox.textContent = msg;
+            errBox.style.display = 'block';
+        }
+
+        if (addBtn) {
+            addBtn.addEventListener('click', function () {
+                if (errBox) errBox.style.display = 'none';
+                if (nameInput) nameInput.value = 'My device';
+                modal.style.display = 'flex';
+                if (nameInput) nameInput.focus();
+            });
+        }
+        if (cancelB) cancelB.addEventListener('click', function () { modal.style.display = 'none'; });
+        if (modal) modal.addEventListener('click', function (e) { if (e.target === modal) modal.style.display = 'none'; });
+
+        if (confirmB) {
+            confirmB.addEventListener('click', async function () {
+                var name = (nameInput && nameInput.value.trim()) || 'My device';
+                confirmB.disabled = true;
+                confirmB.textContent = 'Waiting...';
+                try {
+                    var optRes = await fetch('/user/passkeys/options', {
+                        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfMeta.content },
+                        credentials: 'same-origin',
+                    });
+                    if (optRes.redirected || optRes.status === 401 || optRes.status === 302) {
+                        window.location.href = '/confirm-password';
+                        return;
+                    }
+                    if (!optRes.ok) throw new Error('Options fetch failed: ' + optRes.status);
+                    var options = await optRes.json();
+                    var publicKey = prepCreate(options.publicKey || options);
+
+                    var cred = await navigator.credentials.create({ publicKey: publicKey });
+
+                    var payload = { name: name, credential: serializeCred(cred) };
+                    var store = await fetch('/user/passkeys', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrfMeta.content,
+                        },
+                        credentials: 'same-origin',
+                        body: JSON.stringify(payload),
+                    });
+                    if (!store.ok) {
+                        var text = await store.text();
+                        throw new Error('Store failed: ' + store.status + ' ' + text.substring(0, 200));
+                    }
+                    modal.style.display = 'none';
+                    window.location.reload();
+                } catch (e) {
+                    showErr(e.message || 'Failed');
+                    confirmB.disabled = false;
+                    confirmB.textContent = 'Create →';
+                }
+            });
+        }
+    })();
+    </script>
+
+
     {{-- GDPR --}}
     <x-lab::card>
         <h2 style="margin-top: 0;">Data &amp; privacy</h2>
