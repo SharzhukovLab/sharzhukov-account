@@ -11,7 +11,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Passkeys\PasskeyAuthenticatable;
 use Laravel\Passkeys\Contracts\PasskeyUser;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
     use HasFactory, Notifiable, TwoFactorAuthenticatable, PasskeyAuthenticatable;
 
