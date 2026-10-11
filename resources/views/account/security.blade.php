@@ -165,30 +165,14 @@
         <p class="field-hint" style="margin-top: 16px;">
             You may be asked to confirm your password first.
         </p>
-
-        {{-- Register modal --}}
-        <div id="passkey-modal" style="display:none; position:fixed; inset:0; z-index:200; align-items:center; justify-content:center; background: rgba(0,0,0,.55); backdrop-filter: blur(3px); padding: 16px;">
-            <div class="brutal-card" style="max-width: 440px; width: 100%; padding: 28px; box-shadow: 8px 8px 0 var(--brutal-shadow);">
-                <h3 style="margin-top: 0; font-family: var(--font-sans); font-weight: 900; font-size: 22px;">Name your passkey</h3>
-                <p class="field-hint" style="margin-bottom: 16px;">Give it a name you'll recognize later — e.g. "MacBook Pro", "iPhone".</p>
-                <input type="text" id="passkey-name" class="lab-input" placeholder="MacBook Pro" maxlength="60" autocomplete="off">
-                <div id="passkey-error" style="display:none; color: #dc2626; font-size: 13px; margin-top: 10px;"></div>
-                <div style="display: flex; gap: 8px; margin-top: 20px; justify-content: flex-end;">
-                    <button type="button" class="lab-btn lab-btn--secondary" id="passkey-cancel">Cancel</button>
-                    <button type="button" class="lab-btn lab-btn--primary" id="passkey-confirm">Create →</button>
-                </div>
-            </div>
-        </div>
     </x-lab::card>
 
     <script>
     (function () {
         var addBtn   = document.getElementById('passkey-add-btn');
-        var modal    = document.getElementById('passkey-modal');
-        var nameInput= document.getElementById('passkey-name');
+                var nameInput= document.getElementById('passkey-name');
         var confirmB = document.getElementById('passkey-confirm');
-        var cancelB  = document.getElementById('passkey-cancel');
-        var errBox   = document.getElementById('passkey-error');
+                var errBox   = document.getElementById('passkey-error');
         var csrfMeta = document.querySelector('meta[name="csrf-token"]');
 
         if (!window.PublicKeyCredential) {
@@ -239,12 +223,10 @@
             addBtn.addEventListener('click', function () {
                 if (errBox) errBox.style.display = 'none';
                 if (nameInput) nameInput.value = 'My device';
-                modal.style.display = 'flex';
-                if (nameInput) nameInput.focus();
+if (nameInput) nameInput.focus();
             });
         }
-        if (cancelB) cancelB.addEventListener('click', function () { modal.style.display = 'none'; });
-        if (modal) modal.addEventListener('click', function (e) { if (e.target === modal) modal.style.display = 'none'; });
+        
 
         if (confirmB) {
             confirmB.addEventListener('click', async function () {
@@ -283,7 +265,7 @@
                         var text = await store.text();
                         throw new Error('Store failed: ' + store.status + ' ' + text.substring(0, 200));
                     }
-                    modal.style.display = 'none';
+                    if (window.labModalClose) window.labModalClose('passkey-modal');
                     window.location.reload();
                 } catch (e) {
                     showErr(e.message || 'Failed');
@@ -335,4 +317,18 @@
             </div>
         @endif
     </x-lab::card>
+    {{-- Register modal (lab-ui component) --}}
+        <x-lab::modal id="passkey-modal" title="Name your passkey" :closeable="false">
+            <p style="margin:0 0 16px;color:var(--lab-fg-muted);font-size:14px;line-height:1.6;">
+                Give it a name you'll recognize later — e.g. "MacBook Pro", "iPhone".
+            </p>
+            <input type="text" id="passkey-name" class="lab-input" placeholder="MacBook Pro" maxlength="60" autocomplete="off">
+            <div id="passkey-error" style="display:none; color:#dc2626; font-size:13px; margin-top:10px;"></div>
+
+            <x-slot:actions>
+                <button type="button" class="lab-btn lab-btn--secondary" data-lab-modal-close>Cancel</button>
+                <button type="button" class="lab-btn lab-btn--primary" id="passkey-confirm">Create →</button>
+            </x-slot:actions>
+        </x-lab::modal>
+
 </x-layouts.app>
