@@ -32,6 +32,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/messages', MessagesController::class)->name('messages');
 
+    // ── Direct Messages ──
+    Route::get('/conversations', [\App\Http\Controllers\ConversationController::class, 'index'])->name('conversations.index');
+    Route::get('/conversations/new/{username}', [\App\Http\Controllers\ConversationController::class, 'start'])->name('conversations.start');
+    Route::get('/conversations/{conversation}', [\App\Http\Controllers\ConversationController::class, 'show'])->name('conversations.show');
+    Route::post('/conversations/{conversation}/messages', [\App\Http\Controllers\ConversationController::class, 'store'])->name('conversations.store');
     Route::get('/statistics', StatisticsController::class)->name('statistics');
 
     Route::get('/projects', [ProjectsController::class, 'index'])->name('projects.index');
