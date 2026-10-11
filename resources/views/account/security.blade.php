@@ -258,7 +258,7 @@
                     });
                     if (optRes.status === 423 || optRes.redirected || optRes.status === 401 || optRes.status === 302) {
                         // 423 = password confirmation required
-                        window.location.href = '/confirm-password';
+                        window.location.href = '/user/confirm-password';
                         return;
                     }
                     if (!optRes.ok) throw new Error('Options fetch failed: ' + optRes.status);
