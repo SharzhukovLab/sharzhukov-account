@@ -256,13 +256,15 @@
                         headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfMeta.content },
                         credentials: 'same-origin',
                     });
-                    if (optRes.redirected || optRes.status === 401 || optRes.status === 302) {
+                    if (optRes.status === 423 || optRes.redirected || optRes.status === 401 || optRes.status === 302) {
+                        // 423 = password confirmation required
                         window.location.href = '/confirm-password';
                         return;
                     }
                     if (!optRes.ok) throw new Error('Options fetch failed: ' + optRes.status);
-                    var options = await optRes.json();
-                    var publicKey = prepCreate(options.publicKey || options);
+                    var data = await optRes.json();
+                    var optObj = data.options || data.publicKey || data;
+                    var publicKey = prepCreate(optObj);
 
                     var cred = await navigator.credentials.create({ publicKey: publicKey });
 

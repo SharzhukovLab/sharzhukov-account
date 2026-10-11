@@ -115,8 +115,9 @@
                     credentials: 'same-origin',
                 });
                 if (!optRes.ok) throw new Error('Cannot start passkey login (' + optRes.status + ')');
-                var options = await optRes.json();
-                var publicKey = prepGet(options.publicKey || options);
+                var data = await optRes.json();
+                var optObj = data.options || data.publicKey || data;
+                var publicKey = prepGet(optObj);
 
                 var cred = await navigator.credentials.get({ publicKey: publicKey });
                 if (!cred) throw new Error('No credential returned');
