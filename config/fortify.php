@@ -145,8 +145,14 @@ return [
     */
 
     'passkeys' => [
-        'relying_party_id' => parse_url(config('app.url'), PHP_URL_HOST),
-        'allowed_origins' => [config('app.url')],
+        'relying_party_id' => 'sharzhukov.com',
+        'allowed_origins' => [
+            'https://sharzhukov.com',
+            'https://www.sharzhukov.com',
+            'https://account.sharzhukov.com',
+            'https://wiki.sharzhukov.com',
+            'https://go.sharzhukov.com',
+        ],
         'timeout' => 60000,
     ],
 

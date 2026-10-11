@@ -20,6 +20,14 @@ class AppServiceProvider extends ServiceProvider
         // config/passkeys.php, breaking throttle/redirect/middleware.
         // Force our values AFTER all providers have booted.
         config([
+            'passkeys.relying_party_id'      => 'sharzhukov.com',
+            'passkeys.allowed_origins'       => [
+                'https://sharzhukov.com',
+                'https://www.sharzhukov.com',
+                'https://account.sharzhukov.com',
+                'https://wiki.sharzhukov.com',
+                'https://go.sharzhukov.com',
+            ],
             'passkeys.throttle'              => 'throttle:6,1',
             'passkeys.management_middleware' => [],
             'passkeys.redirect'              => '/dashboard',

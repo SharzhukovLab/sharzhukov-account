@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'relying_party_id' => parse_url(config('app.url'), PHP_URL_HOST),
+    'relying_party_id' => 'sharzhukov.com',
 
     /*
     |--------------------------------------------------------------------------
@@ -27,7 +27,11 @@ return [
     */
 
     'allowed_origins' => [
-        config('app.url'),
+        'https://sharzhukov.com',
+        'https://www.sharzhukov.com',
+        'https://account.sharzhukov.com',
+        'https://wiki.sharzhukov.com',
+        'https://go.sharzhukov.com',
     ],
 
     /*
