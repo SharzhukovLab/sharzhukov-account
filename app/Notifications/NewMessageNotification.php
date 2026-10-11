@@ -29,7 +29,8 @@ class NewMessageNotification extends Notification
             'type'            => 'new_message',
             'title'           => 'New message from ' . $this->from->name,
             'message'         => Str::limit($this->body, 120),
-            'url'             => '/conversations/' . $this->conversation->id,
+            // ВАЖНО: conversations живут ТОЛЬКО на account
+            'url'             => "https://account.sharzhukov.com/conversations/{$this->conversation->id}",
             'conversation_id' => $this->conversation->id,
             'from_username'   => $this->from->username,
         ];
