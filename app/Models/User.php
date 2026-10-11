@@ -109,21 +109,32 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         ];
     }
 
-    public static function specTypes(): array
+        public static function specTypes(): array
     {
         return [
-            'desktop'  => ['label' => 'Desktop',  'icon' => '🖥'],
-            'laptop'   => ['label' => 'Laptop',   'icon' => '💻'],
-            'cpu'      => ['label' => 'CPU',      'icon' => '⚙️'],
-            'gpu'      => ['label' => 'GPU',      'icon' => '🎮'],
-            'ram'      => ['label' => 'RAM',      'icon' => '🧠'],
-            'storage'  => ['label' => 'Storage',  'icon' => '💾'],
-            'os'       => ['label' => 'OS',       'icon' => '🪟'],
-            'display'  => ['label' => 'Display',  'icon' => '📺'],
-            'keyboard' => ['label' => 'Keyboard', 'icon' => '⌨️'],
-            'mouse'    => ['label' => 'Mouse',    'icon' => '🖱'],
-            'custom'   => ['label' => 'Other',    'icon' => '✨'],
+            'cpu'         => ['label' => 'CPU'],
+            'gpu'         => ['label' => 'GPU'],
+            'ram'         => ['label' => 'RAM'],
+            'storage'     => ['label' => 'Storage'],
+            'motherboard' => ['label' => 'Motherboard'],
+            'psu'         => ['label' => 'Power Supply'],
+            'case'        => ['label' => 'Case'],
+            'cooling'     => ['label' => 'Cooling'],
+            'os'          => ['label' => 'OS'],
+            'display'     => ['label' => 'Display'],
+            'keyboard'    => ['label' => 'Keyboard'],
+            'mouse'       => ['label' => 'Mouse'],
+            'audio'       => ['label' => 'Audio'],
+            'network'     => ['label' => 'Network'],
+            'custom'      => ['label' => 'Other'],
         ];
+    }
+
+    public static function isNestedSpecs(array $specs): bool
+    {
+        if (empty($specs)) return true;
+        $first = reset($specs);
+        return is_array($first) && isset($first['components']) && is_array($first['components']);
     }
 
 public function projects()
