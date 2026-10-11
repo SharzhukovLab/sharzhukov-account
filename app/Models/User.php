@@ -66,21 +66,16 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
      */
     public function getAvatarUrlAttribute(): string
     {
-        if ($this->avatar_path) {
-            return 'https://main.sharzhukov.com/storage/' . ltrim($this->avatar_path, '/');
+        // 1) Загруженный файл
+        if (!empty($this->avatar_path)) {
+            return 'https://sharzhukov.com/storage/' . ltrim($this->avatar_path, '/');
         }
-
-        $initial = strtoupper(mb_substr($this->name ?? 'U', 0, 1));
-        $initial = htmlspecialchars($initial, ENT_XML1, 'UTF-8');
-
-        $svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">'
-             . '<rect width="128" height="128" fill="#ff5c1f"/>'
-             . '<text x="64" y="84" font-family="-apple-system,BlinkMacSystemFont,sans-serif" '
-             . 'font-size="60" font-weight="900" fill="#ffffff" text-anchor="middle" '
-             . 'letter-spacing="-2">' . $initial . '</text>'
-             . '</svg>';
-
-        return 'data:image/svg+xml;base64,' . base64_encode($svg);
+        // 2) Внешний (Google и т.п.)
+        if (!empty($this->avatar_url_external)) {
+            return $this->avatar_url_external;
+        }
+        // 3) Заглушка — пустая (шаблон отрендерит fallback с инициалом)
+        return '';
     }
 
     public function getProfileUrlAttribute(): string

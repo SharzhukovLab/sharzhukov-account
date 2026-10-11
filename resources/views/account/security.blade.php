@@ -168,114 +168,129 @@
     </x-lab::card>
 
     <script>
-    (function () {
-        var addBtn   = document.getElementById('passkey-add-btn');
-                var nameInput= document.getElementById('passkey-name');
-        var confirmB = document.getElementById('passkey-confirm');
-                var errBox   = document.getElementById('passkey-error');
-        var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+document.addEventListener('DOMContentLoaded', function () {
+    var addBtn    = document.getElementById('passkey-add-btn');
+    var confirmB  = document.getElementById('passkey-confirm');
+    var nameInput = document.getElementById('passkey-name');
+    var errBox    = document.getElementById('passkey-error');
+    var csrfMeta  = document.querySelector('meta[name="csrf-token"]');
 
-        if (!window.PublicKeyCredential) {
-            if (addBtn) { addBtn.disabled = true; addBtn.textContent = 'Passkeys not supported'; }
-            return;
-        }
+    if (!window.PublicKeyCredential) {
+        if (addBtn) { addBtn.disabled = true; addBtn.textContent = 'Passkeys not supported'; }
+        return;
+    }
 
-        function b64uToBuf(s) {
-            s = s.replace(/-/g, '+').replace(/_/g, '/');
-            while (s.length % 4) s += '=';
-            var bin = atob(s), len = bin.length, buf = new Uint8Array(len);
-            for (var i = 0; i < len; i++) buf[i] = bin.charCodeAt(i);
-            return buf.buffer;
-        }
-        function bufToB64u(buf) {
-            var bin = '', bytes = new Uint8Array(buf);
-            for (var i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i]);
-            return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-        }
-        function prepCreate(opts) {
-            opts.challenge = b64uToBuf(opts.challenge);
-            opts.user.id   = b64uToBuf(opts.user.id);
-            (opts.excludeCredentials || []).forEach(function (c) { c.id = b64uToBuf(c.id); });
-            return opts;
-        }
-        function serializeCred(cred) {
-            if (typeof cred.toJSON === 'function') return cred.toJSON();
-            var r = cred.response;
-            return {
-                id: cred.id,
-                rawId: bufToB64u(cred.rawId),
-                type: cred.type,
-                response: {
-                    clientDataJSON: bufToB64u(r.clientDataJSON),
-                    attestationObject: bufToB64u(r.attestationObject),
-                    transports: typeof r.getTransports === 'function' ? r.getTransports() : undefined,
-                },
-                clientExtensionResults: typeof cred.getClientExtensionResults === 'function' ? cred.getClientExtensionResults() : {},
-            };
-        }
-        function showErr(msg) {
-            if (!errBox) { alert(msg); return; }
-            errBox.textContent = msg;
-            errBox.style.display = 'block';
-        }
+    function b64uToBuf(s) {
+        s = s.replace(/-/g, '+').replace(/_/g, '/');
+        while (s.length % 4) s += '=';
+        var bin = atob(s), len = bin.length, buf = new Uint8Array(len);
+        for (var i = 0; i < len; i++) buf[i] = bin.charCodeAt(i);
+        return buf.buffer;
+    }
+    function bufToB64u(buf) {
+        var bin = '', bytes = new Uint8Array(buf);
+        for (var i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i]);
+        return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+    function prepCreate(opts) {
+        opts.challenge = b64uToBuf(opts.challenge);
+        opts.user.id   = b64uToBuf(opts.user.id);
+        (opts.excludeCredentials || []).forEach(function (c) { c.id = b64uToBuf(c.id); });
+        return opts;
+    }
+    function serializeCred(cred) {
+        if (typeof cred.toJSON === 'function') return cred.toJSON();
+        var r = cred.response;
+        return {
+            id: cred.id,
+            rawId: bufToB64u(cred.rawId),
+            type: cred.type,
+            response: {
+                clientDataJSON: bufToB64u(r.clientDataJSON),
+                attestationObject: bufToB64u(r.attestationObject),
+                transports: typeof r.getTransports === 'function' ? r.getTransports() : undefined,
+            },
+            clientExtensionResults: typeof cred.getClientExtensionResults === 'function' ? cred.getClientExtensionResults() : {},
+        };
+    }
+    function showErr(msg) {
+        if (errBox) { errBox.textContent = msg; errBox.style.display = 'block'; }
+        else { alert(msg); }
+    }
 
-        if (addBtn) {
-            addBtn.addEventListener('click', function () {
-                if (errBox) errBox.style.display = 'none';
-                if (nameInput) nameInput.value = 'My device';
-if (nameInput) nameInput.focus();
-            });
-        }
-        
+    // Открыть модалку
+    function openModal() {
+        var m = document.getElementById('passkey-modal');
+        if (!m) return;
+        m.setAttribute('data-open', 'true');
+        document.body.classList.add('lab-modal-open');
+    }
+    function closeModal() {
+        var m = document.getElementById('passkey-modal');
+        if (!m) return;
+        m.setAttribute('data-open', 'false');
+        document.body.classList.remove('lab-modal-open');
+    }
 
-        if (confirmB) {
-            confirmB.addEventListener('click', async function () {
-                var name = (nameInput && nameInput.value.trim()) || 'My device';
-                confirmB.disabled = true;
-                confirmB.textContent = 'Waiting...';
-                try {
-                    var optRes = await fetch('/user/passkeys/options', {
-                        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfMeta.content },
-                        credentials: 'same-origin',
-                    });
-                    if (optRes.status === 423 || optRes.redirected || optRes.status === 401 || optRes.status === 302) {
-                        // 423 = password confirmation required
-                        window.location.href = '/user/confirm-password';
-                        return;
-                    }
-                    if (!optRes.ok) throw new Error('Options fetch failed: ' + optRes.status);
-                    var data = await optRes.json();
-                    var optObj = data.options || data.publicKey || data;
-                    var publicKey = prepCreate(optObj);
+    if (addBtn) {
+        addBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (errBox) errBox.style.display = 'none';
+            if (nameInput) nameInput.value = 'My device';
+            openModal();
+            if (nameInput) setTimeout(function () { nameInput.focus(); }, 60);
+        });
+    }
 
-                    var cred = await navigator.credentials.create({ publicKey: publicKey });
-
-                    var payload = { name: name, credential: serializeCred(cred) };
-                    var store = await fetch('/user/passkeys', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': csrfMeta.content,
-                        },
-                        credentials: 'same-origin',
-                        body: JSON.stringify(payload),
-                    });
-                    if (!store.ok) {
-                        var text = await store.text();
-                        throw new Error('Store failed: ' + store.status + ' ' + text.substring(0, 200));
-                    }
-                    if (window.labModalClose) window.labModalClose('passkey-modal');
-                    window.location.reload();
-                } catch (e) {
-                    showErr(e.message || 'Failed');
-                    confirmB.disabled = false;
-                    confirmB.textContent = 'Create →';
+    if (confirmB) {
+        confirmB.addEventListener('click', async function () {
+            var name = (nameInput && nameInput.value.trim()) || 'My device';
+            confirmB.disabled = true;
+            var orig = confirmB.textContent;
+            confirmB.textContent = 'Waiting...';
+            try {
+                var optRes = await fetch('/user/passkeys/options', {
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfMeta.content },
+                    credentials: 'same-origin',
+                });
+                if (optRes.status === 423 || optRes.redirected || optRes.status === 401 || optRes.status === 302) {
+                    window.location.href = '/user/confirm-password';
+                    return;
                 }
-            });
-        }
-    })();
-    </script>
+                if (!optRes.ok) throw new Error('Options fetch failed: ' + optRes.status);
+                var data = await optRes.json();
+                var optObj = data.options || data.publicKey || data;
+                var publicKey = prepCreate(optObj);
+
+                var cred = await navigator.credentials.create({ publicKey: publicKey });
+                if (!cred) throw new Error('No credential returned');
+
+                var payload = { name: name, credential: serializeCred(cred) };
+                var store = await fetch('/user/passkeys', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfMeta.content,
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(payload),
+                });
+                if (!store.ok) {
+                    var text = await store.text();
+                    throw new Error('Store failed: ' + store.status + ' ' + text.substring(0, 200));
+                }
+                closeModal();
+                window.location.reload();
+            } catch (e) {
+                showErr(e.message || 'Failed');
+                confirmB.disabled = false;
+                confirmB.textContent = orig;
+            }
+        });
+    }
+});
+</script>
 
 
     {{-- GDPR --}}
