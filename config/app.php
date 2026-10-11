@@ -123,4 +123,6 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+
+    'main_url' => env('MAIN_URL', 'https://sharzhukov.com'),
 ];

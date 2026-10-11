@@ -151,4 +151,12 @@ class UserProject extends Model
     {
         $this->increment('views_count');
     }
+
+    /**
+     * Публичная ссылка на проект (ведёт на main — projects.show там).
+     */
+    public function getPublicUrlAttribute(): string
+    {
+        return rtrim(config('app.main_url', 'https://sharzhukov.com'), '/') . '/projects/' . $this->slug;
+    }
 }

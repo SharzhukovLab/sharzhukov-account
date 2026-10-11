@@ -54,7 +54,7 @@
 
                     <div style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
                         @if ($project->status === 'approved')
-                            <x-lab::button variant="secondary" size="sm" :href="$project->url" target="_blank">View live &nearr;</x-lab::button>
+                            <x-lab::button variant="secondary" size="sm" :href="$project->public_url" target="_blank">View live &nearr;</x-lab::button>
                         @endif
                         <x-lab::button variant="secondary" size="sm" :href="route('projects.edit', $project)">Edit</x-lab::button>
                         <form method="POST" action="{{ route('projects.destroy', $project) }}" style="display: inline;" onsubmit="return confirm('Delete this project?');">
