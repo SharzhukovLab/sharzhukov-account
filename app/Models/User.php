@@ -9,6 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Passkeys\PasskeyAuthenticatable;
+use Laravel\Passkeys\Contracts\PasskeyUser;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
