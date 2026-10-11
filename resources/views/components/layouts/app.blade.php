@@ -39,9 +39,40 @@
         ['label' => 'Security', 'url' => '/security'],
         ['label' => 'Sessions', 'url' => '/sessions'],
         ['label' => 'Projects', 'url' => '/projects'],
-        ['label' => 'Main ↗',   'url' => 'https://sharzhukov.com', 'external' => true],
+        ['label' => 'Main',   'url' => 'https://sharzhukov.com', 'external' => true],
     ]"
 >
+    <x-slot:userMenu>
+        <div class="brutal-nav-dropdown">
+            @if($me)
+                <div class="brutal-nav-dropdown-header">
+                    @if($me->avatar_path)
+                        <img src="{{ $me->avatar_url }}" alt="{{ $me->name }}">
+                    @else
+                        <span class="brutal-nav-avatar-fallback">{{ strtoupper(mb_substr($me->name ?? 'U', 0, 1)) }}</span>
+                    @endif
+                    <div class="brutal-nav-dropdown-header-info">
+                        <div class="brutal-nav-dropdown-header-name">{{ $me->name }}</div>
+                        <div class="brutal-nav-dropdown-header-username">&#64;{{ $me->username }}</div>
+                    </div>
+                </div>
+            @endif
+            <a href="https://sharzhukov.com/admin" class="brutal-nav-dropdown-item" target="_blank" rel="noopener">Admin panel ↗</a>
+            <div class="brutal-nav-dropdown-divider"></div>
+            <a href="{{ url('/profile') }}" class="brutal-nav-dropdown-item">My account</a>
+            <a href="https://sharzhukov.com/u/{{ $me?->username }}" class="brutal-nav-dropdown-item" target="_blank" rel="noopener">Public profile ↗</a>
+            <a href="{{ url('/messages') }}" class="brutal-nav-dropdown-item">My messages</a>
+            <a href="{{ url('/projects') }}" class="brutal-nav-dropdown-item">My projects</a>
+            <a href="{{ url('/statistics') }}" class="brutal-nav-dropdown-item">Statistics</a>
+            <div class="brutal-nav-dropdown-divider"></div>
+            <a href="{{ route('account.export') }}" class="brutal-nav-dropdown-item">Export data</a>
+            <div class="brutal-nav-dropdown-divider"></div>
+            <form method="POST" action="{{ route('logout') }}" class="brutal-nav-dropdown-item danger">
+                @csrf
+                <button type="submit">Sign out</button>
+            </form>
+        </div>
+    </x-slot:userMenu>
 
 
     <x-slot:drawer>
